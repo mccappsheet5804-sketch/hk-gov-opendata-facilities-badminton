@@ -712,11 +712,11 @@
 
                 <!-- Badminton Courts List -->
                 <div class="accordion-item">
-                    <div class="accordion-header active" id="headerCenters">
+                    <div class="accordion-header" id="headerCenters">
                         <span><i class="fas fa-list"></i> 羽毛球場列表</span>
                         <i class="fas fa-chevron-down"></i>
                     </div>
-                    <div class="accordion-content active" id="contentCenters">
+                    <div class="accordion-content" id="contentCenters">
                         <div class="search-box">
                             <input type="text" id="searchInput" class="search-input" placeholder="搜尋場館名稱或地址...">
                         </div>
@@ -1266,10 +1266,10 @@
                     }
                     </div>
                     <div><strong>地區:</strong> ${venue.District_Name_TC}</div>
-                    <div><strong>地址:</strong> ${venue.Venue_Address_TC}</div>
-                    <div><strong>電話:</strong> ${venue["Venue_Phone_No."] || '未提供'}</div>
                     <div><strong>場地類型:</strong> ${venue.Facility_Type_Name_TC}</div>
                     <div><strong>位置:</strong> ${venue.Facility_Location_Name_TC || '主場'}</div>
+                    <div><strong>地址:</strong> ${venue.Venue_Address_TC}</div>
+                    <div><strong>電話:</strong> ${venue["Venue_Phone_No."] || '未提供'}</div>
                 `;
 
                 if (venue.Venue_Latitude && venue.Venue_Longitude) {
@@ -1377,24 +1377,10 @@
                     }
                 </div>
                 <div><strong>地區:</strong> ${court.District_Name_TC}</div>
-                <div><strong>地址:</strong> ${court.Venue_Address_TC}</div>
-                <div><strong>電話:</strong> <a href="tel:${court["Venue_Phone_No."]}">${court["Venue_Phone_No."] || '未提供'}</a></div>
                 <div><strong>場地類型:</strong> ${court.Facility_Type_Name_TC}</div>
                 <div><strong>位置:</strong> ${court.Facility_Location_Name_TC || '主場'}</div>
-                ${availableSessions.length > 0 ? `
-                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
-                        <strong>可預約時段:</strong>
-                        <div style="max-height: 100px; overflow-y: auto;">
-                            ${availableSessions.map(s => `
-                                <div style="font-size: 0.9em; margin-top: 3px; padding: 3px; background-color: #f8f9fa; border-radius: 3px;">
-                                    <div><strong>日期:</strong> ${s.Available_Date}</div>
-                                    <div><strong>時間:</strong> ${s.Session_Start_Time}-${s.Session_End_Time}</div>
-                                    <div><strong>空置場數:</strong> <span style="color: #27ae60; font-weight: 600;">${s.Available_Courts}場</span></div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                ` : ''}
+                <div><strong>地址:</strong> ${court.Venue_Address_TC}</div>
+                <div><strong>電話:</strong> <a href="tel:${court["Venue_Phone_No."]}">${court["Venue_Phone_No."] || '未提供'}</a></div>
                 ${venueSessions.length > availableSessions.length ? `
                     <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; font-size: 0.85em; color: #666;">
                         共${venueSessions.length}個時段，${availableSessions.length}個有空置場地
