@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>羽毛球場查詢系統</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft JhengHei', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f5f5f5;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c6c91, #2c3e50);
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header h1 i {
+            color: #ffcc00;
+        }
+
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            max-width: 800px;
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Accordion Styles */
+        .accordion-panel {
+            width: 400px;
+            background-color: white;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+            z-index: 500;
+            transition: transform 0.3s ease;
+        }
+
+        .accordion {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .accordion-item {
+            margin-bottom: 15px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e0e0e0;
+        }
+
+        .accordion-header {
+            background-color: #2c6c91;
+            color: white;
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        .accordion-header:hover {
+            background-color: #1a5c7a;
+        }
+
+        .accordion-header.active {
+            background-color: #2c3e50;
+        }
+
+        .accordion-content {
+            background-color: white;
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+
+        .accordion-content.active {
+            padding: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        /* Facility Type Accordion Styles */
+        .facility-type-accordion {
+            margin-bottom: 10px;
+        }
+
+        .facility-type-header {
+            background-color: #4a90e2;
+            color: white;
+            padding: 12px 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            border-radius: 6px;
+            margin-bottom: 5px;
+            transition: background-color 0.2s;
+        }
+
+        .facility-type-header:hover {
+            background-color: #3a80d2;
+        }
+
+        .facility-type-header.active {
+            background-color: #2c6c91;
+        }
+
+        .facility-type-content {
+            background-color: #f8f9fa;
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            border-radius: 0 0 6px 6px;
+        }
+
+        .facility-type-content.active {
+            padding: 15px;
+            overflow-y: auto;
+            min-height: fit-content;
+        }
+
+        /* District Accordion Styles */
+        .district-accordion {
+            margin-bottom: 8px;
+        }
+
+        .district-header {
+            background-color: #2c6c91;
+            color: white;
+            padding: 10px 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            border-radius: 4px;
+            margin-bottom: 3px;
+            transition: background-color 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .district-header:hover {
+            background-color: #1a5c7a;
+        }
+
+        .district-header.active {
+            background-color: #2c3e50;
+        }
+
+        .district-content {
+            background-color: #f0f7ff;
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .district-content.active {
+            padding: 10px;
+            overflow-y: auto;
+            min-height: 200px;
+        }
+
+        /* Venue Accordion Styles */
+        .venue-accordion {
+            margin-bottom: 6px;
+        }
+
+        .venue-header {
+            background-color: #e8f4ff;
+            color: #2c3e50;
+            padding: 10px 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            border-radius: 4px;
+            margin-bottom: 3px;
+            transition: all 0.2s;
+            border-left: 4px solid #4a90e2;
+        }
+
+        .venue-header:hover {
+            background-color: #d4e7ff;
+            border-left-color: #2c6c91;
+        }
+
+        .venue-header.active {
+            background-color: #fff9e6;
+            border-left-color: #ffcc00;
+        }
+
+        .venue-content {
+            background-color: white;
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .venue-content.active {
+            padding: 12px;
+            overflow-y: auto;
+            min-height: 200px;
+        }
+
+        /* Facility Details Styles */
+        .facility-details {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .facility-detail-item {
+            margin-bottom: 5px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .facility-detail-item i {
+            color: #2c6c91;
+            margin-right: 8px;
+            margin-top: 3px;
+            width: 16px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .btn {
+            background-color: #2c6c91;
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            background-color: #1a5c7a;
+        }
+
+        .btn.active {
+            background-color: #2c3e50;
+        }
+
+        .btn-danger {
+            background-color: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+
+        .btn-success {
+            background-color: #27ae60;
+        }
+
+        .btn-success:hover {
+            background-color: #219653;
+        }
+
+        .info-box {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #2c6c91;
+            font-size: 0.9rem;
+        }
+
+        .info-box h4 {
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+
+        /* Search Box */
+        .search-box {
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #2c6c91;
+        }
+
+        /* Map Styles */
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Footer Styles */
+        .footer {
+            background-color: #2c3e50;
+            color: white;
+            padding: 6px 20px;
+            text-align: center;
+            font-size: 0.85rem;
+            border-top: 1px solid #4a6491;
+            z-index: 1000;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .footer-links a {
+            color: #ecf0f1;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: #3498db;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .accordion-panel {
+                width: 100%;
+                height: 40vh;
+                border-right: none;
+                border-bottom: 1px solid #ddd;
+            }
+
+            .header h1 {
+                font-size: 1.3rem;
+            }
+
+            .header p {
+                font-size: 0.85rem;
+            }
+
+            .accordion-header {
+                padding: 12px 15px;
+                font-size: 0.95rem;
+            }
+
+            .btn {
+                padding: 10px 15px;
+                font-size: 0.95rem;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+            }
+
+            .footer-links {
+                justify-content: center;
+            }
+        }
+
+        /* For very small screens like iPhone SE */
+        @media (max-width: 375px) {
+            .header {
+                padding: 12px 15px;
+            }
+
+            .header h1 {
+                font-size: 1.2rem;
+            }
+
+            .header p {
+                font-size: 0.8rem;
+            }
+
+            .accordion {
+                padding: 10px;
+            }
+
+            .accordion-header {
+                padding: 10px 12px;
+                font-size: 0.9rem;
+            }
+
+            .accordion-content.active {
+                padding: 15px;
+            }
+
+            .btn {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+
+            .footer {
+                padding: 10px 15px;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Stats Display */
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding: 10px 0;
+            border-top: 1px dashed #ddd;
+            font-size: 0.9rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 1.2rem;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        /* Toggle panel button for mobile */
+        .panel-toggle {
+            display: none;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .panel-toggle {
+                display: block;
+            }
+
+            .accordion-panel.collapsed {
+                transform: translateY(-100%);
+                height: 0;
+                overflow: hidden;
+            }
+        }
+
+        /* Legend */
+        .legend {
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            border-radius: 3px;
+        }
+
+        /* Loading indicator */
+        .loading {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2c6c91;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Coordinates display */
+        .coordinates {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            z-index: 500;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Counter Styles */
+        .facility-counter {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 12px;
+            padding: 2px 10px;
+            font-size: 0.8rem;
+            margin-left: 8px;
+        }
+
+        .district-counter {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #4a90e2;
+            color: white;
+            border-radius: 10px;
+            padding: 1px 8px;
+            font-size: 0.75rem;
+            margin-left: 8px;
+        }
+
+        .venue-counter {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #2c6c91;
+            color: white;
+            border-radius: 8px;
+            padding: 1px 6px;
+            font-size: 0.7rem;
+            margin-left: 8px;
+        }
+
+        /* Available courts indicator */
+        .available-courts {
+            display: inline-block;
+            background-color: #27ae60;
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .no-courts {
+            background-color: #e74c3c;
+        }
+
+        .session-time {
+            color: #2c6c91;
+            font-weight: 600;
+        }
+
+        .venue-address {
+            color: #666;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+
+        /* Session List Styles */
+        .session-list {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .session-item {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 5px;
+            font-size: 0.85rem;
+        }
+
+        .session-date {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .session-time {
+            color: #2c6c91;
+        }
+
+        .session-courts {
+            color: #27ae60;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1><i class="fas fa-table-tennis"></i> 羽毛球場查詢系統</h1>
+        <p>查詢全港各區羽毛球場空置情況，包括場地位置、開放時間、預約狀況等</p>
+    </div>
+
+    <div class="container">
+        <button class="panel-toggle" id="panelToggle" style="display:none">
+            <i class="fas fa-bars"></i> 控制面板
+        </button>
+
+        <div class="accordion-panel" id="accordionPanel">
+            <div class="accordion">
+
+                <!-- Badminton Courts List -->
+                <div class="accordion-item">
+                    <div class="accordion-header active" id="headerCenters">
+                        <span><i class="fas fa-list"></i> 羽毛球場列表</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="accordion-content active" id="contentCenters">
+                        <div class="search-box">
+                            <input type="text" id="searchInput" class="search-input" placeholder="搜尋場館名稱或地址...">
+                        </div>
+
+                        <div class="info-box">
+                            <h4><i class="fas fa-info-circle"></i> 使用說明</h4>
+                            <p>1. 點擊場地類型展開查看詳細分類</p>
+                            <p>2. 點擊地區展開查看該區場館</p>
+                            <p>3. 點擊場館名稱查看詳細資訊</p>
+                            <p>4. 使用搜尋框快速查找特定場館</p>
+                            <p>5. 綠色標籤表示有空置場地</p>
+                        </div>
+
+                        <div class="stats">
+                            <div class="stat-item">
+                                <div class="stat-value" id="totalCourts">0</div>
+                                <div class="stat-label">總場次</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="totalDistricts">0</div>
+                                <div class="stat-label">地區</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="availableCourts">0</div>
+                                <div class="stat-label">可預約</div>
+                            </div>
+                        </div>
+
+                        <div id="badmintonCourtsList">
+                            <!-- Badminton courts will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Map Settings -->
+                <div class="accordion-item">
+                    <div class="accordion-header" id="headerSettings">
+                        <span><i class="fas fa-cog"></i> 地圖設定</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="accordion-content" id="contentSettings">
+                        <div class="control-group">
+                            <label><i class="fas fa-map"></i> 底圖樣式</label>
+                            <select id="baseMapSelect" class="btn" style="padding: 10px;">
+                                <option value="OpenStreetMap">OpenStreetMap</option>
+                                <option value="地形圖">地形圖</option>
+                                <option value="衛星圖像">衛星圖像</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label><i class="fas fa-search"></i> 縮放級別</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <button class="btn" id="zoomInBtn" style="width: auto; flex: 1;">
+                                    <i class="fas fa-search-plus"></i> 放大
+                                </button>
+                                <button class="btn" id="zoomOutBtn" style="width: auto; flex: 1;">
+                                    <i class="fas fa-search-minus"></i> 縮小
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label><i class="fas fa-location-arrow"></i> 重置視圖</label>
+                            <button class="btn" id="resetViewBtn">
+                                <i class="fas fa-globe-asia"></i> 重置至香港全境
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="legend">
+                    <label class="mb-2"><i class="fas fa-layer-group" style="margin-bottom:10px!important"></i>
+                        圖例</label>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #ff6b6b;"></div>
+                        <span>羽毛球場館</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #4a90e2;"></div>
+                        <span>已選取場館</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #27ae60;"></div>
+                        <span>有空置場地</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <div id="map"></div>
+            <div class="loading" id="loadingIndicator">
+                <div class="spinner"></div>
+                <p>正在載入羽毛球場數據...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-copyright">
+                &copy; 2024 羽毛球場查詢系統<br />數據由康文署提供
+            </div>
+        </div>
+    </footer>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // Initialize variables
+        let map;
+        let courtsLayer;
+        let selectedCourt = null;
+        let allCourts = [];
+        let groupedByFacilityType = {};
+
+        let onLoadDatetime;
+        let onDataLoadedDatetime;
+
+        // Add base layers
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors'
+        });
+
+        const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+            attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+        });
+
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        });
+
+        // Add layer control
+        const baseLayers = {
+            "OpenStreetMap": osmLayer,
+            "地形圖": topoLayer,
+            "衛星圖像": satelliteLayer
+        };
+        var currentTileLayer = baseLayers["OpenStreetMap"];
+
+        // Initialize map when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            onLoadDatetime = Date.now();
+
+            initMap();
+            setupAccordion();
+            setupEventListeners();
+            loadBadmintonCourtsData();
+
+            // Handle mobile panel toggle
+            const panelToggle = document.getElementById('panelToggle');
+            const accordionPanel = document.getElementById('accordionPanel');
+
+            panelToggle.addEventListener('click', function () {
+                accordionPanel.classList.toggle('collapsed');
+                panelToggle.innerHTML = accordionPanel.classList.contains('collapsed')
+                    ? '<i class="fas fa-bars"></i> 顯示控制面板'
+                    : '<i class="fas fa-bars"></i> 隱藏控制面板';
+            });
+        });
+
+        // Initialize the map
+        function initMap() {
+            // Set initial view to Hong Kong
+            map = L.map('map', { zoomControl: false }).setView([22.3193, 114.1694], 11);
+
+            // Add default layer
+            currentTileLayer.addTo(map);
+        }
+
+        // Setup accordion functionality
+        function setupAccordion() {
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', function (e) {
+                    const content = this.nextElementSibling;
+                    const isActive = this.classList.contains('active');
+
+                    // Close all accordion items
+                    accordionHeaders.forEach(h => {
+                        h.classList.remove('active');
+                        h.querySelector('.fa-chevron-down').style.transform = 'rotate(0deg)';
+                    });
+
+                    document.querySelectorAll('.accordion-content').forEach(c => {
+                        c.classList.remove('active');
+                    });
+
+                    // Open clicked item if it was not active
+                    if (!isActive) {
+                        this.classList.add('active');
+                        content.classList.add('active');
+                        this.querySelector('.fa-chevron-down').style.transform = 'rotate(180deg)';
+                    }
+
+                    map.invalidateSize();
+                });
+            });
+        }
+
+        // Setup button event listeners
+        function setupEventListeners() {
+            // Map controls
+            document.getElementById('zoomInBtn').addEventListener('click', function () {
+                map.zoomIn();
+            });
+
+            document.getElementById('zoomOutBtn').addEventListener('click', function () {
+                map.zoomOut();
+            });
+
+            document.getElementById('resetViewBtn').addEventListener('click', function () {
+                map.setView([22.3193, 114.1694], 11);
+            });
+
+            // Base map selector
+            document.getElementById('baseMapSelect').addEventListener('change', function (e) {
+                // Remove current layer
+                map.removeLayer(currentTileLayer);
+
+                // Add new layer
+                currentTileLayer = baseLayers[e.target.value];
+                currentTileLayer.addTo(map);
+            });
+
+            // Search input
+            document.getElementById('searchInput').addEventListener('input', function (e) {
+                filterBadmintonCourts(e.target.value);
+            });
+        }
+
+        // Load Badminton Courts data from the API
+        async function loadBadmintonCourtsData() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            loadingIndicator.style.display = 'block';
+
+            try {
+                // Using the specified API endpoint
+                const apiUrl = `${"https://cors-anywhere.herokuapp.com/"}${"https://data.smartplay.lcsd.gov.hk/rest/cms/api/v1/publ/contents/open-data/badminton/file"}`;
+
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const courtsData = await response.json();
+                allCourts = courtsData || [];
+
+                // Group courts by facility type -> district -> venue
+                groupedByFacilityType = {};
+                allCourts.forEach(court => {
+                    const facilityType = court.Facility_Type_Name_TC || '未分類';
+                    const district = court.District_Name_TC || '未分類';
+                    const venueName = court.Venue_Name_TC || '未知場館';
+
+                    if (!groupedByFacilityType[facilityType]) {
+                        groupedByFacilityType[facilityType] = {};
+                    }
+
+                    if (!groupedByFacilityType[facilityType][district]) {
+                        groupedByFacilityType[facilityType][district] = {};
+                    }
+
+                    if (!groupedByFacilityType[facilityType][district][venueName]) {
+                        groupedByFacilityType[facilityType][district][venueName] = {
+                            venueInfo: court,
+                            sessions: []
+                        };
+                    }
+
+                    groupedByFacilityType[facilityType][district][venueName].sessions.push(court);
+                });
+
+                // Update stats
+                updateStats();
+
+                // Render accordion list
+                renderBadmintonCourtsList();
+
+                // Create markers on map
+                createMapMarkers();
+
+                onDataLoadedDatetime = Date.now();
+
+                alert(`載入花了 ${Math.round((onDataLoadedDatetime - onLoadDatetime) / 1000)} 秒。`);
+            } catch (error) {
+                console.error('Error loading Badminton Courts data:', error);
+                alert('無法載入羽毛球場數據，請檢查網絡連接或稍後再試。');
+                window.open("https://cors-anywhere.herokuapp.com/", "_href");
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        // Update statistics display
+        function updateStats() {
+            const totalCourts = allCourts.length;
+            const totalDistricts = new Set(allCourts.map(court => court.District_Name_TC)).size;
+            const availableCourts = allCourts.filter(court => parseInt(court.Available_Courts) > 0).length;
+
+            document.getElementById('totalCourts').textContent = totalCourts;
+            document.getElementById('totalDistricts').textContent = totalDistricts;
+            document.getElementById('availableCourts').textContent = availableCourts;
+        }
+
+        // Render badminton courts list in accordion
+        function renderBadmintonCourtsList() {
+            const container = document.getElementById('badmintonCourtsList');
+            container.innerHTML = '';
+
+            // Sort facility types
+            const sortedFacilityTypes = Object.keys(groupedByFacilityType).sort();
+
+            sortedFacilityTypes.forEach(facilityType => {
+                const districts = groupedByFacilityType[facilityType];
+                const districtCount = Object.keys(districts).length;
+                const venueCount = Object.values(districts).reduce((sum, venues) => sum + Object.keys(venues).length, 0);
+
+                // Create facility type accordion item
+                const facilityAccordion = document.createElement('div');
+                facilityAccordion.className = 'facility-type-accordion';
+                facilityAccordion.innerHTML = `
+                    <div class="facility-type-header">
+                        <span>
+                            ${facilityType}
+                            <span class="facility-counter">${districtCount}區 ${venueCount}場館</span>
+                        </span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="facility-type-content"></div>
+                `;
+
+                container.appendChild(facilityAccordion);
+
+                // Add click event to facility header
+                const facilityHeader = facilityAccordion.querySelector('.facility-type-header');
+                const facilityContent = facilityAccordion.querySelector('.facility-type-content');
+
+                facilityHeader.addEventListener('click', function () {
+                    const isActive = this.classList.contains('active');
+
+                    // Toggle active class
+                    this.classList.toggle('active');
+                    facilityContent.classList.toggle('active');
+
+                    // Rotate icon
+                    const icon = this.querySelector('.fa-chevron-down');
+                    icon.style.transform = isActive ? 'rotate(0deg)' : 'rotate(180deg)';
+                });
+
+                // Add districts accordions
+                const sortedDistricts = Object.keys(districts).sort();
+
+                sortedDistricts.forEach(district => {
+                    const venues = districts[district];
+                    const venueCount = Object.keys(venues).length;
+                    const sessionCount = Object.values(venues).reduce((sum, venue) => sum + venue.sessions.length, 0);
+                    const availableSessions = Object.values(venues).reduce((sum, venue) =>
+                        sum + venue.sessions.filter(s => parseInt(s.Available_Courts) > 0).length, 0);
+
+                    // Create district accordion
+                    const districtAccordion = document.createElement('div');
+                    districtAccordion.className = 'district-accordion';
+                    districtAccordion.innerHTML = `
+                        <div class="district-header">
+                            <span>
+                                ${district}
+                                <span class="district-counter">${venueCount}場館 ${sessionCount}時段</span>
+                            </span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="district-content"></div>
+                    `;
+
+                    facilityContent.appendChild(districtAccordion);
+
+                    // Add click event to district header
+                    const districtHeader = districtAccordion.querySelector('.district-header');
+                    const districtContent = districtAccordion.querySelector('.district-content');
+
+                    districtHeader.addEventListener('click', function () {
+                        const isActive = this.classList.contains('active');
+
+                        // Toggle active class
+                        this.classList.toggle('active');
+                        districtContent.classList.toggle('active');
+
+                        // Rotate icon
+                        const icon = this.querySelector('.fa-chevron-down');
+                        icon.style.transform = isActive ? 'rotate(0deg)' : 'rotate(180deg)';
+                    });
+
+                    // Add venues accordions
+                    const sortedVenues = Object.keys(venues).sort();
+
+                    sortedVenues.forEach(venueName => {
+                        const venueData = venues[venueName];
+                        const venueItem = createVenueAccordion(venueData, venueName, district, facilityType);
+                        districtContent.appendChild(venueItem);
+                    });
+                });
+            });
+
+            // Setup venue accordion events
+            setupVenueAccordionEvents();
+        }
+
+        // Create a venue accordion element
+        function createVenueAccordion(venueData, venueName, district, facilityType) {
+            const venueInfo = venueData.venueInfo;
+            const sessions = venueData.sessions;
+
+            // Calculate total available courts
+            const totalAvailable = sessions.reduce((sum, session) => sum + parseInt(session.Available_Courts || 0), 0);
+            const availableSessions = sessions.filter(s => parseInt(s.Available_Courts) > 0);
+
+            const venueAccordion = document.createElement('div');
+            venueAccordion.className = 'venue-accordion';
+            venueAccordion.dataset.venueId = `${facilityType}-${district}-${venueName}`;
+
+            venueAccordion.innerHTML = `
+                <div class="venue-header">
+                    <span>
+                        ${venueName}
+                        ${totalAvailable > 0 ?
+                    `<span class="available-courts">${totalAvailable}場可預約</span>` :
+                    `<span class="available-courts no-courts">暫無空場</span>`
+                }
+                        <span class="venue-counter">${sessions.length}時段</span>
+                    </span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="venue-content">
+                    <div class="venue-address">
+                        <i class="fas fa-map-marker-alt"></i>
+                        ${venueInfo.Venue_Address_TC}
+                    </div>
+                    <div class="facility-details">
+                        <div class="facility-detail-item">
+                            <i class="fas fa-phone"></i>
+                            <span>${venueInfo["Venue_Phone_No."] || '未提供'}</span>
+                        </div>
+                        <div class="facility-detail-item">
+                            <i class="fas fa-map-pin"></i>
+                            <span>${venueInfo.Facility_Location_Name_TC || '主場'}</span>
+                        </div>
+                    </div>
+                    ${availableSessions.length > 0 ? `
+                        <div class="session-list">
+                            <div style="font-weight: 600; color: #2c3e50; margin-bottom: 8px;">可預約時段：</div>
+                            ${availableSessions.map(s => `
+                                <div class="session-item">
+                                    <div class="session-date">${s.Available_Date}</div>
+                                    <div class="session-time">${s.Session_Start_Time} - ${s.Session_End_Time}</div>
+                                    <div class="session-courts">空置場數：${s.Available_Courts}場</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            return venueAccordion;
+        }
+
+        // Setup venue accordion events
+        function setupVenueAccordionEvents() {
+            document.querySelectorAll('.venue-header').forEach(header => {
+                header.addEventListener('click', function (e) {
+                    // Prevent event bubbling to parent accordions
+                    e.stopPropagation();
+
+                    const content = this.nextElementSibling;
+                    const isActive = this.classList.contains('active');
+
+                    // Toggle active class
+                    this.classList.toggle('active');
+                    content.classList.toggle('active');
+
+                    // Rotate icon
+                    const icon = this.querySelector('.fa-chevron-down');
+                    icon.style.transform = isActive ? 'rotate(0deg)' : 'rotate(180deg)';
+
+                    // If selecting a venue, highlight it on the map
+                    if (!isActive) {
+                        const venueAccordion = this.closest('.venue-accordion');
+                        const venueId = venueAccordion.dataset.venueId;
+                        const [facilityType, district, venueName] = venueId.split('-');
+
+                        const venueData = groupedByFacilityType[facilityType]?.[district]?.[venueName];
+                        if (venueData) {
+                            selectBadmintonCourt(venueData.venueInfo);
+                        }
+                    }
+                });
+            });
+        }
+
+        // Create markers on the map
+        function createMapMarkers() {
+            if (courtsLayer) {
+                map.removeLayer(courtsLayer);
+            }
+
+            courtsLayer = L.layerGroup().addTo(map);
+
+            // Create a map of unique venues
+            const uniqueVenues = {};
+            allCourts.forEach(court => {
+                const venueKey = `${court.Venue_Name_TC}-${court.District_Name_TC}`;
+                if (!uniqueVenues[venueKey]) {
+                    uniqueVenues[venueKey] = {
+                        venue: court,
+                        sessions: []
+                    };
+                }
+                uniqueVenues[venueKey].sessions.push(court);
+            });
+
+            // Create markers for each unique venue
+            Object.values(uniqueVenues).forEach(venueData => {
+                const venue = venueData.venue;
+                const sessions = venueData.sessions;
+
+                const totalAvailable = sessions.reduce((sum, session) => sum + parseInt(session.Available_Courts || 0), 0);
+
+                // Determine marker color based on availability
+                const markerColor = totalAvailable > 0 ? '#27ae60' : '#ff6b6b';
+
+                // Create popup content
+                const availableSessions = sessions.filter(s => parseInt(s.Available_Courts) > 0);
+                const popupContent = `
+                    <div style="font-weight: bold; margin-bottom: 5px; color: #2c3e50; font-size: 1.1em">
+                        ${venue.Venue_Name_TC}
+                        ${totalAvailable > 0 ?
+                        `<span style="background-color: #27ae60; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.8em; margin-left: 8px;">
+                                ${totalAvailable}場可預約
+                            </span>` :
+                        `<span style="background-color: #e74c3c; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.8em; margin-left: 8px;">
+                                暫無空場
+                            </span>`
+                    }
+                    </div>
+                    <div><strong>地區:</strong> ${venue.District_Name_TC}</div>
+                    <div><strong>地址:</strong> ${venue.Venue_Address_TC}</div>
+                    <div><strong>電話:</strong> ${venue["Venue_Phone_No."] || '未提供'}</div>
+                    <div><strong>場地類型:</strong> ${venue.Facility_Type_Name_TC}</div>
+                    <div><strong>位置:</strong> ${venue.Facility_Location_Name_TC || '主場'}</div>
+                `;
+
+                if (venue.Venue_Latitude && venue.Venue_Longitude) {
+                    // Create marker
+                    const marker = L.circleMarker([parseFloat(venue.Venue_Latitude), parseFloat(venue.Venue_Longitude)], {
+                        radius: 10,
+                        fillColor: markerColor,
+                        color: totalAvailable > 0 ? '#219653' : '#c0392b',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    });
+
+                    marker.bindPopup(popupContent);
+
+                    // Add click event
+                    marker.on('click', function () {
+                        selectBadmintonCourt(venue);
+
+                        // Find and highlight the corresponding accordion
+                        document.querySelectorAll('.venue-header').forEach(header => {
+                            header.classList.remove('active');
+                            const content = header.nextElementSibling;
+                            content.classList.remove('active');
+                            header.querySelector('.fa-chevron-down').style.transform = 'rotate(0deg)';
+                        });
+
+                        // Find and expand the corresponding venue accordion
+                        document.querySelectorAll('.venue-accordion').forEach(accordion => {
+                            if (accordion.dataset.venueId === `${venue.Facility_Type_Name_TC}-${venue.District_Name_TC}-${venue.Venue_Name_TC}`) {
+                                const header = accordion.querySelector('.venue-header');
+                                const content = accordion.querySelector('.venue-content');
+                                header.classList.add('active');
+                                content.classList.add('active');
+                                header.querySelector('.fa-chevron-down').style.transform = 'rotate(180deg)';
+
+                                // Expand parent accordions
+                                let parent = accordion.closest('.district-content');
+                                if (parent) {
+                                    const districtHeader = parent.previousElementSibling;
+                                    districtHeader.classList.add('active');
+                                    parent.classList.add('active');
+                                    districtHeader.querySelector('.fa-chevron-down').style.transform = 'rotate(180deg)';
+
+                                    parent = parent.closest('.facility-type-content');
+                                    if (parent) {
+                                        const facilityHeader = parent.previousElementSibling;
+                                        facilityHeader.classList.add('active');
+                                        parent.classList.add('active');
+                                        facilityHeader.querySelector('.fa-chevron-down').style.transform = 'rotate(180deg)';
+                                    }
+                                }
+                            }
+                        });
+                    });
+
+                    courtsLayer.addLayer(marker);
+                }
+            });
+        }
+
+        // Select and highlight a badminton court
+        function selectBadmintonCourt(court) {
+            // Clear previous selection
+            if (selectedCourt) {
+                map.removeLayer(selectedCourt);
+                selectedCourt = null;
+            }
+
+            if (court.Venue_Latitude && court.Venue_Longitude) {
+                // Create highlighted marker
+                selectedCourt = L.circleMarker([parseFloat(court.Venue_Latitude), parseFloat(court.Venue_Longitude)], {
+                    radius: 12,
+                    fillColor: '#4a90e2',
+                    color: '#2c6c91',
+                    weight: 3,
+                    opacity: 1,
+                    fillOpacity: 0.9
+                }).addTo(map);
+                // Pan to the selected court
+                map.setView([parseFloat(court.Venue_Latitude), parseFloat(court.Venue_Longitude)], 14);
+            }
+
+            // Get all sessions for this venue
+            const venueSessions = allCourts.filter(c =>
+                c.Venue_Name_TC === court.Venue_Name_TC &&
+                c.District_Name_TC === court.District_Name_TC
+            );
+
+            const availableSessions = venueSessions.filter(s => parseInt(s.Available_Courts) > 0);
+            const totalAvailable = availableSessions.reduce((sum, session) => sum + parseInt(session.Available_Courts || 0), 0);
+
+            if (court.Venue_Latitude && court.Venue_Longitude) {
+                // Open popup
+                selectedCourt.bindPopup(`
+                <div style="font-weight: bold; margin-bottom: 5px; color: #2c3e50; font-size: 1.1em">
+                    ${court.Venue_Name_TC}
+                    ${totalAvailable > 0 ?
+                        `<span style="background-color: #27ae60; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.8em; margin-left: 8px;">
+                            ${totalAvailable}場可預約
+                        </span>` :
+                        `<span style="background-color: #e74c3c; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.8em; margin-left: 8px;">
+                            暫無空場
+                        </span>`
+                    }
+                </div>
+                <div><strong>地區:</strong> ${court.District_Name_TC}</div>
+                <div><strong>地址:</strong> ${court.Venue_Address_TC}</div>
+                <div><strong>電話:</strong> <a href="tel:${court["Venue_Phone_No."]}">${court["Venue_Phone_No."] || '未提供'}</a></div>
+                <div><strong>場地類型:</strong> ${court.Facility_Type_Name_TC}</div>
+                <div><strong>位置:</strong> ${court.Facility_Location_Name_TC || '主場'}</div>
+                ${availableSessions.length > 0 ? `
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
+                        <strong>可預約時段:</strong>
+                        <div style="max-height: 100px; overflow-y: auto;">
+                            ${availableSessions.map(s => `
+                                <div style="font-size: 0.9em; margin-top: 3px; padding: 3px; background-color: #f8f9fa; border-radius: 3px;">
+                                    <div><strong>日期:</strong> ${s.Available_Date}</div>
+                                    <div><strong>時間:</strong> ${s.Session_Start_Time}-${s.Session_End_Time}</div>
+                                    <div><strong>空置場數:</strong> <span style="color: #27ae60; font-weight: 600;">${s.Available_Courts}場</span></div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                ${venueSessions.length > availableSessions.length ? `
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; font-size: 0.85em; color: #666;">
+                        共${venueSessions.length}個時段，${availableSessions.length}個有空置場地
+                    </div>
+                ` : ''}
+            `).openPopup();
+            }
+
+            // Show notification
+            showNotification(`已選取: ${court.Venue_Name_TC}`);
+        }
+
+        // Filter badminton courts based on search input
+        function filterBadmintonCourts(searchTerm) {
+            const searchLower = searchTerm.toLowerCase().trim();
+
+            if (!searchLower) {
+                // Show all courts
+                document.querySelectorAll('.venue-accordion').forEach(item => {
+                    item.style.display = 'block';
+                });
+
+                document.querySelectorAll('.district-accordion').forEach(district => {
+                    district.style.display = 'block';
+                });
+
+                document.querySelectorAll('.facility-type-accordion').forEach(facility => {
+                    facility.style.display = 'block';
+                });
+
+                document.getElementById('availableCourts').textContent = allCourts.filter(court => parseInt(court.Available_Courts) > 0).length;
+                return;
+            }
+
+            let visibleCount = 0;
+
+            // Filter venue accordions
+            document.querySelectorAll('.venue-accordion').forEach(item => {
+                const venueName = item.querySelector('.venue-header span').textContent.toLowerCase();
+                const address = item.querySelector('.venue-address').textContent.toLowerCase();
+
+                if (venueName.includes(searchLower) || address.includes(searchLower)) {
+                    item.style.display = 'block';
+                    visibleCount++;
+
+                    // Ensure parent accordions are visible and expanded
+                    const districtAccordion = item.closest('.district-accordion');
+                    if (districtAccordion) {
+                        districtAccordion.style.display = 'block';
+
+                        const districtHeader = districtAccordion.querySelector('.district-header');
+                        const districtContent = districtAccordion.querySelector('.district-content');
+
+                        if (!districtHeader.classList.contains('active')) {
+                            districtHeader.classList.add('active');
+                            districtContent.classList.add('active');
+                            districtHeader.querySelector('.fa-chevron-down').style.transform = 'rotate(180deg)';
+                        }
+
+                        const facilityAccordion = districtAccordion.closest('.facility-type-accordion');
+                        if (facilityAccordion) {
+                            facilityAccordion.style.display = 'block';
+
+                            const facilityHeader = facilityAccordion.querySelector('.facility-type-header');
+                            const facilityContent = facilityAccordion.querySelector('.facility-type-content');
+
+                            if (!facilityHeader.classList.contains('active')) {
+                                facilityHeader.classList.add('active');
+                                facilityContent.classList.add('active');
+                                facilityHeader.querySelector('.fa-chevron-down').style.transform = 'rotate(180deg)';
+                            }
+                        }
+                    }
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Hide districts with no visible venues
+            document.querySelectorAll('.district-accordion').forEach(district => {
+                const visibleItems = district.querySelectorAll('.venue-accordion[style="display: block"]');
+                if (visibleItems.length === 0) {
+                    district.style.display = 'none';
+                }
+            });
+
+            // Hide facility types with no visible districts
+            document.querySelectorAll('.facility-type-accordion').forEach(facility => {
+                const visibleDistricts = facility.querySelectorAll('.district-accordion[style="display: block"]');
+                if (visibleDistricts.length === 0) {
+                    facility.style.display = 'none';
+                }
+            });
+
+            // Update available courts count for visible items
+            const visibleAvailable = Array.from(document.querySelectorAll('.venue-accordion[style="display: block"]'))
+                .filter(item => {
+                    const courtsText = item.querySelector('.available-courts').textContent;
+                    return parseInt(courtsText) > 0;
+                }).length;
+
+            document.getElementById('availableCourts').textContent = visibleAvailable;
+        }
+
+        // Show temporary notification
+        function showNotification(message) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background-color: #2c6c91;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 5px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                z-index: 10000;
+                font-weight: 500;
+                max-width: 300px;
+                animation: fadeInOut 3s ease-in-out;
+            `;
+
+            // Add keyframes for animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeInOut {
+                    0% { opacity: 0; transform: translateY(-10px); }
+                    10% { opacity: 1; transform: translateY(0); }
+                    90% { opacity: 1; transform: translateY(0); }
+                    100% { opacity: 0; transform: translateY(-10px); }
+                }
+            `;
+            document.head.appendChild(style);
+
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            // Remove after animation completes
+            setTimeout(() => {
+                notification.remove();
+                style.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html>
